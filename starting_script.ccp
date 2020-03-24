@@ -1,5 +1,6 @@
 void setup()
 {
+  Serial.begin(9600);
   pinMode(13, OUTPUT);
   pinMode(12, OUTPUT);
   pinMode(11, OUTPUT);
@@ -8,6 +9,7 @@ void setup()
   pinMode(8, OUTPUT);
   pinMode(7, INPUT);
   pinMode(6, INPUT);
+  pinMode(A0, INPUT);
 }
 
 boolean runXTimes = true;
@@ -16,6 +18,12 @@ int buttonStateEnd = 0;
 
 void loop()
 {
+  
+  //Chose Distance via Poti (0-100 Rounds, 5 Steps)
+  int lapPoti = analogRead(A0);
+  int m = map(lapPoti,0,1023,0,1000)/10;
+  int x = ((m +4)/5)*5;
+  
   buttonStateStart = digitalRead(7);
   buttonStateEnd = digitalRead(6);
   
@@ -44,10 +52,10 @@ void loop()
     digitalWrite(10, LOW);
     digitalWrite(9, LOW);
     digitalWrite(8, LOW);
+    Serial.println("Start!");
   }
   
-  
-  //Chose Distance via Poti
+
   
   //Start Timing & Lap Counter
   	//Write Lap Time to Table for each Car
