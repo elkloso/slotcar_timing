@@ -9,12 +9,10 @@ void setup()
   pinMode(8, OUTPUT);	//LED Orange
   pinMode(7, INPUT);	//Start Button
   pinMode(5, INPUT);	//Reed Car 1
-  pinMode(A0, INPUT);	//Round Poti  
+  pinMode(A0, INPUT);	//Round Poti 
 }
 
 //#########   Setup   #########//
-long trackDistance = 200;
-
 boolean runXTimes = true;
 boolean startseq = false;
 boolean systemReadyMsg = true;
@@ -22,6 +20,7 @@ boolean lapSet = false;
 boolean raceMode = false;
 boolean resultMode = false;
 boolean finishMode = false;
+boolean resultsShown = false;
 int car1Rounds = -1;
 int car2Rounds = -1;
 int lapsNumOld = 0;
@@ -35,7 +34,9 @@ unsigned long nowTime;
 unsigned long lapTime;
 unsigned long lastTime;
 long previousMillis = 0;
+const long trackDistance = 200;
 const long interval = 1000; 
+
 
 void loop()
 {
@@ -47,7 +48,7 @@ void loop()
       digitalWrite(thisPin, LOW);
     };
   	Serial.println("Ready");
-    Serial.println("Please Chose Laps and Press Start");
+    Serial.println("Please Chose Laps and Press Button");
     systemReadyMsg = false;
   };
   
@@ -61,15 +62,16 @@ void loop()
       int m = map(lapPoti,0,1023,1,1000)/10;
       int lapsNum = ((m +4)/5)*5;
       if(lapsNumOld != lapsNum){
-        Serial.println("Laps set: ");
+        Serial.print("Laps set: ");
         Serial.println(lapsNum);
         lapsNumOld = lapsNum;
       };
     };
     if ((buttonStateSubmit == HIGH) && (lapSet == false)) {
       lapconfig = lapsNumOld;
-      Serial.println("Laps set to: ");
+      Serial.print("Laps set to: ");
       Serial.println(lapconfig);
+      Serial.println("Press Button to Start");
       lapSet = true;
       delay(1500);
     };
@@ -164,8 +166,7 @@ void loop()
     
       
     //Last Lap or Start Button pushed again
-    if(buttonStateStop == HIGH && finishMode == false){
-      Serial.println("Stop Pushed");
+    if((buttonStateStop == HIGH && finishMode == false) || (remainingLaps == 1 && finishMode == false)){
       finishMode = true; 
       
       //Set LEDs to Orange
@@ -186,6 +187,7 @@ void loop()
       //Leave Racemode
       raceMode = false;
       resultMode = true;
+      buttonStateStop = 0;
       
       //Add Second Car//
       //Reset to Beginning if Start Button Pushed long
@@ -194,12 +196,12 @@ void loop()
     };
   };
   
-  buttonStateStop = 0;
  
   //Show results
   while(resultMode == true){
     int buttonStateReset = digitalRead(7);
-    if(resultsShown == false{
+    
+    if(resultsShown == false){
       //Total Time
       unsigned long nowTimeCar1 = millis();
       unsigned long totalTimeCar1 = (nowTimeCar1 - startTime);
@@ -218,18 +220,38 @@ void loop()
       Serial.print("Total Laps: ");
       Serial.println(car1Rounds); 
       
-      Serial.print("Press Start to Reset: ");
+      Serial.print("Press Button to Reset: ");
       resultsShown = true;
     };
-      //Reset to Beginning after Button is pushed another time
-
+    
+    //Reset to Beginning after Button is pushed another time
+    if(buttonStateReset == HIGH){
+      Serial.println("Reset"); 
+      runXTimes = true;
+      startseq = false;
+      systemReadyMsg = true;
+      lapSet = false;
+      raceMode = false;
+      finishMode = false;
+      resultsShown = false;
+      car1Rounds = -1;
+      car2Rounds = -1;
+      lapsNumOld = 0;
+      lapconfig = 0;
+      buttonStateSubmit = 0;
+      lapsNum = 0;
+      remainingLapsOld = 999;
+      remainingLaps = 999;
+      previousMillis = 0;
+      resultMode = false;
+      delay(1000);
+    };
     
       //Who finished first
       //Fastest Lap
       //Which Time Delta
       //Calculate Mean Time and Mean Speed
   };
-
   //Writing Functions
   //Display Output
   //Connect to an Live App
