@@ -8,6 +8,7 @@ void setup()
   pinMode(9, OUTPUT);	//LED Red
   pinMode(8, OUTPUT);	//LED Orange
   pinMode(7, INPUT);	//Start Button
+  pinMode(6, INPUT);	//Reed Car 2
   pinMode(5, INPUT);	//Reed Car 1
   pinMode(A0, INPUT);	//Round Poti 
 }
@@ -21,6 +22,8 @@ boolean raceMode = false;
 boolean resultMode = false;
 boolean finishMode = false;
 boolean resultsShown = false;
+boolean timingCar1Allowed = true;
+boolean timingCar2Allowed = true;
 int car1Rounds = -1;
 int car2Rounds = -1;
 int lapsNumOld = 0;
@@ -119,7 +122,7 @@ void loop()
   };
   
   //*********** FERTIG BIS HIER ***********//
-  boolean timingAllowed = true;
+  
   
 //Start Timing & Lap Counter
   //If in Racemode
@@ -128,9 +131,11 @@ void loop()
   
   while(raceMode == true){  
     int buttonStateStop = digitalRead(7);
-    //Count Lap if Reed is triggered
     int car1Reed = digitalRead(5);
-    if((car1Reed == HIGH) && (timingAllowed == true)){
+    int car2Reed = digitalRead(6);
+    
+    //Count Lap if Reed is triggered
+    if((car1Reed == HIGH) && (timingCar1Allowed == true)){
       //Debounce Button
       unsigned long currentMillis = millis();
       if (currentMillis - previousMillis >= interval) {
@@ -148,14 +153,18 @@ void loop()
         previousMillis = nowTime;
     	inputTime = lapTime;
         lapTimesCar1[lapTimeCar1Index++] = lapTime;
-        timingAllowed = false;
+        timingCar1Allowed = false;
         Serial.print("Laptime: ");
         printTime();
       };
     };
+    
     //Round doesn't count if a car stand still on Start
-    if((car1Reed == LOW) && (timingAllowed == false)){
-      timingAllowed = true;
+    if((car1Reed == LOW) && (timingCar1Allowed == false)){
+      timingCar1Allowed = true;
+    };
+    if((car2Reed == LOW) && (timingCar2Allowed == false)){
+      timingCar2Allowed = true;
     };
  
     //Remaining Laps Calculation
@@ -173,8 +182,6 @@ void loop()
     	Serial.println(remainingLaps);
       	remainingLapsOld = remainingLaps;
     };
-
-    
       
     //Last Lap or Start Button pushed again
     if((buttonStateStop == HIGH && finishMode == false) || (remainingLaps == 1 && finishMode == false)){
@@ -211,24 +218,24 @@ void loop()
     
     if(resultsShown == false){
       //Total Time
-      unsigned long nowTimeCar1 = millis();
-      unsigned long totalTimeCar1 = (nowTimeCar1 - startTime);
-      unsigned long millisec  = totalTimeCar1 % 100;
-      unsigned long tseconds = totalTimeCar1 / 1000;
-      unsigned long tminutes = tseconds / 60;
-      unsigned long seconds = tseconds % 60;
-      Serial.print("Total Time Car 1: ");
-      Serial.print(tminutes);
-      Serial.print(":");
-      Serial.print(seconds);
-      Serial.print(":");
-      Serial.println(millisec);
-      Serial.println(lapTimesCar1[0]);
+      unsigned long endTime = millis() - startTime;
+      inputTime = endTime;
+      Serial.print("Total Time: ");
+      printTime();
 
-      //Total Laps
+      //Total Laps (ANPASSEN)
       Serial.print("Total Laps: ");
       Serial.println(car1Rounds); 
       
+      //Who finished first
+      //Which Time Delta
+      
+      //Fastest Lap (ANPASSEN)
+      Serial.println(lapTimesCar1[0]);
+      
+      //Calculate Mean Time and Mean Speed
+      
+      //Restart
       Serial.print("Press Button to Reset: ");
       resultsShown = true;
     };
@@ -254,14 +261,8 @@ void loop()
       previousMillis = 0;
       resultMode = false;
       delay(1000);
-    };
-    
-      //Who finished first
-      //Fastest Lap
-      //Which Time Delta
-      //Calculate Mean Time and Mean Speed
+    };    
   };
-  //Writing Functions
   //Display Output
   //Connect to an Live App
 };
