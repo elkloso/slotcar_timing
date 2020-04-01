@@ -30,12 +30,26 @@ int lapsNum = 0;
 int remainingLapsOld = 999;
 int remainingLaps = 999;
 unsigned long startTime;
+unsigned long inputTime;
 unsigned long nowTime;
 unsigned long lapTime;
 unsigned long lastTime;
 long previousMillis = 0;
 const long trackDistance = 200;
 const long interval = 1000; 
+
+void printTime()
+{
+  unsigned long millisec  = inputTime % 100;
+  unsigned long tseconds = lapTime / 1000;
+  unsigned long tminutes = tseconds / 60;
+  unsigned long seconds = tseconds % 60;
+  Serial.print(tminutes);
+  Serial.print(":");
+  Serial.print(seconds);
+  Serial.print(":");
+  Serial.println(millisec);
+};
 
 
 void loop()
@@ -109,6 +123,9 @@ void loop()
   
 //Start Timing & Lap Counter
   //If in Racemode
+  int lapTimesCar1[lapsNumOld];
+  int lapTimeCar1Index = 0;
+  
   while(raceMode == true){  
     int buttonStateStop = digitalRead(7);
     //Count Lap if Reed is triggered
@@ -129,17 +146,11 @@ void loop()
         lapTime = (nowTime - lastTime); 
         lastTime = nowTime; 
         previousMillis = nowTime;
+    	inputTime = lapTime;
+        lapTimesCar1[lapTimeCar1Index++] = lapTime;
         timingAllowed = false;
-        unsigned long millisec  = lapTime % 100;
-        unsigned long tseconds = lapTime / 1000;
-        unsigned long tminutes = tseconds / 60;
-        unsigned long seconds = tseconds % 60;
         Serial.print("Laptime: ");
-        Serial.print(tminutes);
-        Serial.print(":");
-        Serial.print(seconds);
-        Serial.print(":");
-        Serial.println(millisec);
+        printTime();
       };
     };
     //Round doesn't count if a car stand still on Start
@@ -189,10 +200,7 @@ void loop()
       resultMode = true;
       buttonStateStop = 0;
       
-      //Add Second Car//
-      //Reset to Beginning if Start Button Pushed long
-      //Write Lap Time to Table for each Car
-      //Write Lap Number to Table for each Car  
+      //Add Second Car// 
     };
   };
   
@@ -215,6 +223,7 @@ void loop()
       Serial.print(seconds);
       Serial.print(":");
       Serial.println(millisec);
+      Serial.println(lapTimesCar1[0]);
 
       //Total Laps
       Serial.print("Total Laps: ");
