@@ -130,10 +130,7 @@ void loop()
       raceMode = true;
       buttonStateStart = 0;
     };
-  };
-  
-  //*********** FERTIG BIS HIER ***********//
-  
+  }; 
   
 //Start Timing & Lap Counter
   //If in Racemode
@@ -203,13 +200,7 @@ void loop()
       timingCar2Allowed = true;
     };
  
-    //Remaining Laps Calculation (ANPASSEN)
-    if(remainingLapsC1 < remainingLapsC2){
-      remainingLaps = remainingLapsC1;
-    }else{
-      remainingLaps = remainingLapsC2;
-    };
-    
+    //Remaining Laps Calculation
     if(remainingLaps == 1){
     	remainingLaps = 1;
     }
@@ -217,8 +208,13 @@ void loop()
     	remainingLaps = 0;
     }
     else{
-      remainingLaps = lapconfig - car1Rounds;
+      if(car1Rounds > car2Rounds){
+        remainingLaps = lapconfig - car1Rounds;
+      }else{
+        remainingLaps = lapconfig - car2Rounds;
+      };
     };
+    
     if(remainingLaps < remainingLapsOld){
       	Serial.print("Remaining Laps: ");
     	Serial.println(remainingLaps);
@@ -233,8 +229,7 @@ void loop()
       digitalWrite(8, HIGH);
       
       //Set Remaining Laps to 1
-      remainingLapsC1 = 1;
-      remainingLapsC2 = 1;
+      remainingLaps = 1;
     };
        
     //Last Lap is Completed
@@ -264,9 +259,11 @@ void loop()
       Serial.print("Total Time: ");
       printTime();
 
-      //Total Laps (ANPASSEN)
+      //Total Laps
       Serial.print("Total Laps: ");
-      Serial.println(car1Rounds); 
+      Serial.print(car1Rounds); 
+      Serial.print(" | ");
+      Serial.println(car2Rounds);
       
       //Who finished first
       //Which Time Delta
