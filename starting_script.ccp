@@ -153,8 +153,8 @@ void loop()
         car1Rounds++;
         Serial.print("Lap: ");
         Serial.println(car1Rounds);
-        if(remainingLapsC1 == 1){
-          remainingLapsC1 = 0;
+        if(remainingLaps == 1 && car1Rounds > car2Rounds){
+          remainingLaps = 0;
         };
         //Lap Time
         nowTimeC1 = millis();
@@ -176,8 +176,8 @@ void loop()
         car2Rounds++;
         Serial.print("Lap: ");
         Serial.println(car2Rounds);
-        if(remainingLapsC2 == 1){
-          remainingLapsC2 = 0;
+        if(remainingLaps == 1 && car2Rounds > car1Rounds){
+          remainingLaps = 0;
         };
         //Lap Time
         nowTimeC2 = millis();
@@ -200,20 +200,14 @@ void loop()
       timingCar2Allowed = true;
     };
  
-    //Remaining Laps Calculation
-    if(remainingLaps == 1){
-    	remainingLaps = 1;
-    }
-    else if(remainingLaps == 0){
-    	remainingLaps = 0;
-    }
-    else{
+    //Remaining Laps Calculation (Anpassen letzte Runde)   
+    if(remainingLaps > 1){
       if(car1Rounds > car2Rounds){
         remainingLaps = lapconfig - car1Rounds;
       }else{
         remainingLaps = lapconfig - car2Rounds;
       };
-    };
+     };
     
     if(remainingLaps < remainingLapsOld){
       	Serial.print("Remaining Laps: ");
