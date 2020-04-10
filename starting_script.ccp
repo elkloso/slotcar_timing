@@ -32,12 +32,23 @@ int buttonStateSubmit = 0;
 int lapsNum = 0;
 int remainingLapsOld = 999;
 int remainingLaps = 999;
+int remainingLapsC1 = 999;
+int remainingLapsC2 = 999;
 unsigned long startTime;
 unsigned long inputTime;
-unsigned long nowTime;
-unsigned long lapTime;
-unsigned long lastTime;
+unsigned long nowTimeC1;
+unsigned long lapTimeC1;
+unsigned long lastTimeC1;
+unsigned long nowTimeC2;
+unsigned long lapTimeC2;
+unsigned long lastTimeC2;
+unsigned long inputTimeC1;
+unsigned long inputTimeC2;
+long lapTime = 0;
+long lastTime = 0;
 long previousMillis = 0;
+long previousMillisC1 = 0;
+long previousMillisC2 = 0;
 const long trackDistance = 200;
 const long interval = 1000; 
 
@@ -128,6 +139,8 @@ void loop()
   //If in Racemode
   int lapTimesCar1[lapsNumOld];
   int lapTimeCar1Index = 0;
+  int lapTimesCar2[lapsNumOld];
+  int lapTimeCar2Index = 0;
   
   while(raceMode == true){  
     int buttonStateStop = digitalRead(7);
@@ -143,16 +156,39 @@ void loop()
         car1Rounds++;
         Serial.print("Lap: ");
         Serial.println(car1Rounds);
-        if(remainingLaps == 1){
-          remainingLaps = 0;
+        if(remainingLapsC1 == 1){
+          remainingLapsC1 = 0;
         };
         //Lap Time
-        nowTime = millis();
-        lapTime = (nowTime - lastTime); 
-        lastTime = nowTime; 
-        previousMillis = nowTime;
-    	inputTime = lapTime;
-        lapTimesCar1[lapTimeCar1Index++] = lapTime;
+        nowTimeC1 = millis();
+        lapTimeC1 = (nowTimeC1 - lastTime); 
+        lastTimeC1 = nowTimeC1; 
+        previousMillisC1 = nowTimeC1;
+    	inputTimeC1 = lapTimeC1;
+        lapTimesCar1[lapTimeCar1Index++] = lapTimeC1;
+        timingCar1Allowed = false;
+        Serial.print("Laptime: ");
+        printTime();
+      };
+    };
+    if((car2Reed == HIGH) && (timingCar2Allowed == true)){
+      //Debounce Button
+      unsigned long currentMillis = millis();
+      if (currentMillis - previousMillis >= interval) {
+        //Lap Count
+        car2Rounds++;
+        Serial.print("Lap: ");
+        Serial.println(car2Rounds);
+        if(remainingLapsC2 == 1){
+          remainingLapsC2 = 0;
+        };
+        //Lap Time
+        nowTimeC2 = millis();
+        lapTimeC2 = (nowTimeC2 - lastTimeC2); 
+        lastTimeC2 = nowTimeC2; 
+        previousMillisC2 = nowTimeC2;
+    	inputTimeC2 = lapTimeC2;
+        lapTimesCar2[lapTimeCar2Index++] = lapTimeC2;
         timingCar1Allowed = false;
         Serial.print("Laptime: ");
         printTime();
@@ -167,7 +203,13 @@ void loop()
       timingCar2Allowed = true;
     };
  
-    //Remaining Laps Calculation
+    //Remaining Laps Calculation (ANPASSEN)
+    if(remainingLapsC1 <= remainingLapsC2){
+      remainingLaps = remainingLapsC1;
+    }else{
+      remainingLaps = remainingLapsC2;
+    };
+    
     if(remainingLaps == 1){
     	remainingLaps = 1;
     }
@@ -191,7 +233,8 @@ void loop()
       digitalWrite(8, HIGH);
       
       //Set Remaining Laps to 1
-      remainingLaps = 1;
+      remainingLapsC1 = 1;
+      remainingLapsC2 = 1;
     };
        
     //Last Lap is Completed
@@ -206,8 +249,6 @@ void loop()
       raceMode = false;
       resultMode = true;
       buttonStateStop = 0;
-      
-      //Add Second Car// 
     };
   };
   
