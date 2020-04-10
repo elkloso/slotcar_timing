@@ -150,8 +150,8 @@ void loop()
     //Count Lap if Reed is triggered
     if((car1Reed == HIGH) && (timingCar1Allowed == true)){
       //Debounce Button
-      unsigned long currentMillis = millis();
-      if (currentMillis - previousMillis >= interval) {
+      unsigned long currentMillisC1 = millis();
+      if (currentMillisC1 - previousMillisC1 >= interval) {
         //Lap Count
         car1Rounds++;
         Serial.print("Lap: ");
@@ -164,17 +164,17 @@ void loop()
         lapTimeC1 = (nowTimeC1 - lastTime); 
         lastTimeC1 = nowTimeC1; 
         previousMillisC1 = nowTimeC1;
-    	inputTimeC1 = lapTimeC1;
         lapTimesCar1[lapTimeCar1Index++] = lapTimeC1;
         timingCar1Allowed = false;
-        Serial.print("Laptime: ");
+        Serial.print("Laptime C1: ");
+        inputTime = lapTimeC1;
         printTime();
       };
     };
     if((car2Reed == HIGH) && (timingCar2Allowed == true)){
       //Debounce Button
-      unsigned long currentMillis = millis();
-      if (currentMillis - previousMillis >= interval) {
+      unsigned long currentMillisC2 = millis();
+      if (currentMillisC2 - previousMillisC2 >= interval) {
         //Lap Count
         car2Rounds++;
         Serial.print("Lap: ");
@@ -187,10 +187,10 @@ void loop()
         lapTimeC2 = (nowTimeC2 - lastTimeC2); 
         lastTimeC2 = nowTimeC2; 
         previousMillisC2 = nowTimeC2;
-    	inputTimeC2 = lapTimeC2;
         lapTimesCar2[lapTimeCar2Index++] = lapTimeC2;
         timingCar1Allowed = false;
-        Serial.print("Laptime: ");
+        Serial.print("Laptime C2: ");
+        inputTime = lapTimeC2;
         printTime();
       };
     };
@@ -204,7 +204,7 @@ void loop()
     };
  
     //Remaining Laps Calculation (ANPASSEN)
-    if(remainingLapsC1 <= remainingLapsC2){
+    if(remainingLapsC1 < remainingLapsC2){
       remainingLaps = remainingLapsC1;
     }else{
       remainingLaps = remainingLapsC2;
