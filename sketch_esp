@@ -1,0 +1,129 @@
+//Include Libraries
+#include <SPI.h>
+#include <Wire.h>
+#include <Adafruit_GFX.h>
+#include <Adafruit_SSD1306.h>
+
+//Define Display
+#define SCREEN_WIDTH 128 // OLED display width, in pixels
+#define SCREEN_HEIGHT 64 // OLED display height, in pixels
+#define OLED_RESET     -1 // Reset pin # (or -1 if sharing Arduino reset pin)
+Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
+
+//Define Input / Output
+#define startbtn D7           //For the Positive pin of the LED,
+#define lappot A0           //For the Positive pin of the LED,
+
+void setup() {
+  Serial.begin(115200);
+  Serial.println("Ready");
+  pinMode(lappot, INPUT);  //Lap Poti
+  pinMode(startbtn, INPUT);  //Start Button
+  digitalWrite(startbtn, HIGH);  
+
+  //Initialize Display
+  if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
+    Serial.println(F("SSD1306 allocation failed"));
+    for(;;); // Don't proceed, loop forever
+  }            
+  display.display();  
+}
+
+//#########   Setup   #########//
+boolean runXTimes = true;
+boolean startseq = false;
+boolean systemReadyMsg = true;
+boolean lapSet = false;
+boolean raceMode = false;
+boolean resultMode = false;
+boolean finishMode = false;
+boolean resultsShown = false;
+boolean timingCar1Allowed = true;
+boolean timingCar2Allowed = true;
+int car1Rounds = -1;
+int car2Rounds = -1;
+int lapsNumOld = 999;
+int lapconfig = 0;
+int buttonStateSubmit = 0;
+int lapsNum = 0;
+int remainingLapsOld = 999;
+int remainingLaps = 999;
+int remainingLapsC1 = 999;
+int remainingLapsC2 = 999;
+unsigned long startTime;
+unsigned long inputTime;
+unsigned long nowTimeC1;
+unsigned long lapTimeC1;
+unsigned long lastTimeC1;
+unsigned long nowTimeC2;
+unsigned long lapTimeC2;
+unsigned long lastTimeC2;
+unsigned long inputTimeC1;
+unsigned long inputTimeC2;
+long lapTime = 0;
+long lastTime = 0;
+long previousMillis = 0;
+long previousMillisC1 = 0;
+long previousMillisC2 = 0;
+const long trackDistance = 200;
+const long interval = 1000; 
+String displayMsg;
+
+void loop() {
+  while(systemReadyMsg == true){
+    display.clearDisplay();
+    display.setTextSize(2);
+    display.setTextColor(SSD1306_WHITE);
+    display.setCursor(20,10);
+    display.println(F("Slotcar"));
+    display.setCursor(20,30);
+    display.println(F("Timing"));
+    display.display();
+    systemReadyMsg = false;
+    delay(2000);
+  };
+ 
+  //Chose Distance via Poti (0-100 Rounds, 5 Steps)
+  while(lapSet == false){
+    //Debounce Button
+    unsigned long currentMillis = millis();
+    buttonStateSubmit = digitalRead(startbtn);
+    if (currentMillis - previousMillis >= interval) {
+      previousMillis = currentMillis;
+      int lapPoti = analogRead(lappot);
+      int m = map(lapPoti,0,1023,1,1000)/10;
+      int lapsNum = ((m +4)/5)*5;
+      if(lapsNumOld != lapsNum){
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0,0);
+        display.println(F("Choose Laps and"));
+        display.println(F("Press Button"));
+        display.setTextSize(2);
+        display.setCursor(20,30);
+        display.print(F("Laps: "));
+        display.println(lapsNum);
+        display.display();
+        lapsNumOld = lapsNum;
+      }; 
+    };
+    //Press Button to Start
+    if ((buttonStateSubmit == HIGH) && (lapSet == false)) {
+      lapconfig = lapsNumOld;
+      display.clearDisplay();
+      display.setTextSize(2);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(10,0);
+      display.print(F("Laps = "));
+      display.println(lapconfig);
+      display.setTextSize(1);
+      display.setCursor(0,40);
+      display.print(F("Press Button to Start"));
+      display.display();
+      lapSet = true;
+      delay(1500);
+    };
+    delay(0);
+  };
+}
