@@ -11,15 +11,38 @@
 Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 
 //Define Input / Output
-#define startbtn D7           //For the Positive pin of the LED,
-#define lappot A0           //For the Positive pin of the LED,
+#define startbtn D7           
+#define lappot A0  
+#define ledOrange 15           
+#define ledRed1 1
+#define ledRed2 16
+#define ledRed3 0
+#define ledRed4 2   
+/* 
+ *  D0, 
+ *  D1 = 1        LED Red 1
+ *  D2 = 16       LED Red 2
+ *  D3, D4        Display
+ *  D5 = 14       Taster Reed C2
+ *  D6 = 12       Taster Reed C1
+ *  D7 = 13       Taster Start/Stop
+ *  D8 = 0        LED Red 3
+ *  D9 = 2        Built-In LED Red 4
+ *  D10 = 15      LED Orange
+#define reedC1
+#define reedC2
+*/
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Ready");
   pinMode(lappot, INPUT);  //Lap Poti
   pinMode(startbtn, INPUT);  //Start Button
-  digitalWrite(startbtn, HIGH);  
+  pinMode(ledOrange, OUTPUT);
+  pinMode(ledRed1, OUTPUT);
+  pinMode(ledRed2, OUTPUT);
+  pinMode(ledRed3, OUTPUT);
+  pinMode(ledRed4, OUTPUT);
 
   //Initialize Display
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
@@ -69,7 +92,12 @@ const long trackDistance = 200;
 const long interval = 1000; 
 String displayMsg;
 
+int ledArray[] = {15,1,16,0,2}; 
+const int ledArraySize = sizeof(ledArray)/sizeof(ledArray[0]);
+String countdown[5] = { "5", "4", "3", "2", "1"};
+
 void loop() {
+  //Auslagern in Setup
   while(systemReadyMsg == true){
     display.clearDisplay();
     display.setTextSize(2);
@@ -125,5 +153,46 @@ void loop() {
       delay(1500);
     };
     delay(0);
+  };
+
+  //Start Signal Sequence
+  //Start Button Pushed and Startsequence not completed
+  int buttonStateStart = digitalRead(startbtn);
+  if ((buttonStateStart == HIGH) && (startseq == false) && (lapSet == true)) {
+    while(startseq == false){
+      //Start Signal
+      digitalWrite(15, HIGH);
+      display.clearDisplay();
+      display.setTextSize(2);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(5,25);
+      display.print(F("Get Ready!"));
+      display.display();
+      delay(4000); // Wait for 4s
+      for (int i=0; i<ledArraySize; i++) {
+          digitalWrite(ledArray[i], HIGH);
+          display.clearDisplay();
+          display.setTextSize(3);
+          display.setTextColor(SSD1306_WHITE);
+          display.setCursor(55,25);
+          display.print(countdown[i]);
+          display.display();
+          delay(1000); // Wait for 1s
+      };
+      for (int i=0; i<ledArraySize; i++) {
+          digitalWrite(ledArray[i], LOW);
+      };
+      display.clearDisplay();
+      display.setTextSize(2);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(35,25);
+      display.print(F("START!"));
+      display.display();
+      startTime = millis();
+      lastTime = startTime;
+      startseq = true;
+      raceMode = true;
+      buttonStateStart = 0;
+    };
   };
 }
