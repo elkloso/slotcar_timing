@@ -17,7 +17,9 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define ledRed1 1
 #define ledRed2 16
 #define ledRed3 0
-#define ledRed4 2   
+#define ledRed4 2  
+#define reedC1 14
+#define reedC2 12
 /* 
  *  D0, 
  *  D1 = 1        LED Red 1
@@ -29,15 +31,15 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
  *  D8 = 0        LED Red 3
  *  D9 = 2        Built-In LED Red 4
  *  D10 = 15      LED Orange
-#define reedC1
-#define reedC2
 */
 
 void setup() {
   Serial.begin(115200);
   Serial.println("Ready");
-  pinMode(lappot, INPUT);  //Lap Poti
-  pinMode(startbtn, INPUT);  //Start Button
+  pinMode(lappot, INPUT);  
+  pinMode(startbtn, INPUT);  
+  pinMode(reedC1, INPUT);  
+  pinMode(reedC2, INPUT);  
   pinMode(ledOrange, OUTPUT);
   pinMode(ledRed1, OUTPUT);
   pinMode(ledRed2, OUTPUT);
@@ -91,10 +93,25 @@ long previousMillisC2 = 0;
 const long trackDistance = 200;
 const long interval = 1000; 
 String displayMsg;
+String leader;
+String lastTrigger;
 
 int ledArray[] = {15,1,16,0,2}; 
 const int ledArraySize = sizeof(ledArray)/sizeof(ledArray[0]);
 String countdown[5] = { "5", "4", "3", "2", "1"};
+
+void printTime()
+{
+  unsigned long millisec  = inputTime % 100;
+  unsigned long tseconds = lapTime / 1000;
+  unsigned long tminutes = tseconds / 60;
+  unsigned long seconds = tseconds % 60;
+  Serial.print(tminutes);
+  Serial.print(":");
+  Serial.print(seconds);
+  Serial.print(":");
+  Serial.println(millisec);
+};
 
 void loop() {
   //Auslagern in Setup
@@ -155,6 +172,10 @@ void loop() {
     delay(0);
   };
 
+  int lapTimesCar1[lapsNumOld];
+  int lapTimeCar1Index = 0;
+  int lapTimesCar2[lapsNumOld];
+  int lapTimeCar2Index = 0;
   //Start Signal Sequence
   //Start Button Pushed and Startsequence not completed
   int buttonStateStart = digitalRead(startbtn);
@@ -194,5 +215,137 @@ void loop() {
       raceMode = true;
       buttonStateStart = 0;
     };
+  };
+
+  //Start Timing & Lap Counter
+  //If in Racemode
+  while(raceMode == true){  
+    int buttonStateStop = digitalRead(startbtn);
+    int car1Reed = digitalRead(reedC1);
+    int car2Reed = digitalRead(reedC2);
+    
+    //Count Lap if Reed is triggered
+    if((car1Reed == HIGH) && (timingCar1Allowed == true)){
+      //Debounce Button
+      unsigned long currentMillisC1 = millis();
+      if (currentMillisC1 - previousMillisC1 >= interval) {
+        //Lap Count
+        car1Rounds++;
+        lastTrigger = "car1";
+        Serial.print("Lap: ");
+        Serial.println(car1Rounds);
+        if(remainingLaps == 1 && car1Rounds > car2Rounds){
+          remainingLaps = 0;
+        };
+        //Lap Time
+        nowTimeC1 = millis();
+        lapTimeC1 = (nowTimeC1 - lastTime); 
+        lastTimeC1 = nowTimeC1; 
+        previousMillisC1 = nowTimeC1;
+        lapTimesCar1[lapTimeCar1Index++] = lapTimeC1;
+        timingCar1Allowed = false;
+        Serial.print("Laptime C1: ");
+        inputTime = lapTimeC1;
+        printTime();
+      };
+    };
+    if((car2Reed == HIGH) && (timingCar2Allowed == true)){
+      //Debounce Button
+      unsigned long currentMillisC2 = millis();
+      if (currentMillisC2 - previousMillisC2 >= interval) {
+        //Lap Count
+        car2Rounds++;
+        lastTrigger = "car2";
+        Serial.print("Lap: ");
+        Serial.println(car2Rounds);
+        if(remainingLaps == 1 && car2Rounds > car1Rounds){
+          remainingLaps = 0;
+        };
+        //Lap Time
+        nowTimeC2 = millis();
+        lapTimeC2 = (nowTimeC2 - lastTimeC2); 
+        lastTimeC2 = nowTimeC2; 
+        previousMillisC2 = nowTimeC2;
+        lapTimesCar2[lapTimeCar2Index++] = lapTimeC2;
+        timingCar1Allowed = false;
+        Serial.print("Laptime C2: ");
+        inputTime = lapTimeC2;
+        printTime();
+      };
+    };
+    //Round doesn't count if a car stand still on Start
+    if((car1Reed == LOW) && (timingCar1Allowed == false)){
+      timingCar1Allowed = true;
+    };
+    if((car2Reed == LOW) && (timingCar2Allowed == false)){
+      timingCar2Allowed = true;
+    };
+    //Remaining Laps Calculation   
+    if(remainingLaps > 1){
+      if(car1Rounds > car2Rounds){
+        remainingLaps = lapconfig - car1Rounds;
+      }else{
+        remainingLaps = lapconfig - car2Rounds;
+      };
+    };
+    //Calculate Leading Car 
+    if(car1Rounds > car2Rounds){
+      leader = "Car 1";
+    }else if(car1Rounds < car2Rounds){
+      leader = "Car 2";
+    }else{
+      if(lastTrigger == "car2"){
+        leader = "Car 1";
+      }else{
+        leader = "Car 2";
+      }
+    };
+    if(remainingLaps < remainingLapsOld){
+        display.clearDisplay();
+        display.setTextSize(1);
+        display.setTextColor(SSD1306_WHITE);
+        display.setCursor(0,0);
+        display.println(F("Laps to Go: "));
+        display.setTextSize(2);
+        display.println(remainingLaps);
+        display.setCursor(0,30);
+        display.println(F("Leader:"));
+        display.setTextSize(2);
+        display.println(leader);
+        display.display();
+        remainingLapsOld = remainingLaps;
+    };
+      
+    //Last Lap or Start Button pushed again
+    if((buttonStateStop == HIGH && finishMode == false) || (remainingLaps == 1 && finishMode == false)){
+      finishMode = true; 
+      //Set LEDs to Orange
+      digitalWrite(ledOrange, HIGH);
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0,0);
+      display.println(F("LAST LAP!"));
+      display.setTextSize(2);
+      display.setCursor(0,30);
+      display.println(F("Leader:"));
+      display.setTextSize(2);
+      display.println(leader);
+      display.display();
+      //Set Remaining Laps to 1
+      remainingLaps = 1;
+    };
+    //Last Lap is Completed
+    if(remainingLaps == 0){
+      //Set LEDs to RED/STOP after last lap
+      for (int i=0; i<ledArraySize; i++) {
+          digitalWrite(ledArray[i], HIGH);
+      };
+      //Leave Racemode
+      raceMode = false;
+      resultMode = true;
+      buttonStateStop = 0;
+    };
+    delay(0);
   };
 }
