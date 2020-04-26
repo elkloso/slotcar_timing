@@ -20,18 +20,6 @@ Adafruit_SSD1306 display(SCREEN_WIDTH, SCREEN_HEIGHT, &Wire, OLED_RESET);
 #define ledRed4 2  
 #define reedC1 14
 #define reedC2 12
-/* 
- *  D0, 
- *  D1 = 1        LED Red 1
- *  D2 = 16       LED Red 2
- *  D3, D4        Display
- *  D5 = 14       Taster Reed C2
- *  D6 = 12       Taster Reed C1
- *  D7 = 13       Taster Start/Stop
- *  D8 = 0        LED Red 3
- *  D9 = 2        Built-In LED Red 4
- *  D10 = 15      LED Orange
-*/
 
 void setup() {
   Serial.begin(115200);
@@ -76,15 +64,15 @@ int remainingLaps = 999;
 int remainingLapsC1 = 999;
 int remainingLapsC2 = 999;
 unsigned long startTime;
-unsigned long inputTime;
+unsigned long ;
 unsigned long nowTimeC1;
 unsigned long lapTimeC1;
 unsigned long lastTimeC1;
 unsigned long nowTimeC2;
 unsigned long lapTimeC2;
 unsigned long lastTimeC2;
-unsigned long inputTimeC1;
-unsigned long inputTimeC2;
+unsigned long C1;
+unsigned long C2;
 long lapTime = 0;
 long lastTime = 0;
 long previousMillis = 0;
@@ -100,17 +88,14 @@ int ledArray[] = {15,1,16,0,2};
 const int ledArraySize = sizeof(ledArray)/sizeof(ledArray[0]);
 String countdown[5] = { "5", "4", "3", "2", "1"};
 
-void printTime()
+void printTime(int )
 {
-  unsigned long millisec  = inputTime % 100;
+  unsigned long millisec  =  % 100;
   unsigned long tseconds = lapTime / 1000;
   unsigned long tminutes = tseconds / 60;
   unsigned long seconds = tseconds % 60;
-  Serial.print(tminutes);
-  Serial.print(":");
-  Serial.print(seconds);
-  Serial.print(":");
-  Serial.println(millisec);
+  String outputString = tminutes + ":" + seconds + ":" + millisec;
+  return outputString;
 };
 
 void loop() {
@@ -232,8 +217,6 @@ void loop() {
         //Lap Count
         car1Rounds++;
         lastTrigger = "car1";
-        Serial.print("Lap: ");
-        Serial.println(car1Rounds);
         if(remainingLaps == 1 && car1Rounds > car2Rounds){
           remainingLaps = 0;
         };
@@ -244,9 +227,6 @@ void loop() {
         previousMillisC1 = nowTimeC1;
         lapTimesCar1[lapTimeCar1Index++] = lapTimeC1;
         timingCar1Allowed = false;
-        Serial.print("Laptime C1: ");
-        inputTime = lapTimeC1;
-        printTime();
       };
     };
     if((car2Reed == HIGH) && (timingCar2Allowed == true)){
@@ -256,8 +236,6 @@ void loop() {
         //Lap Count
         car2Rounds++;
         lastTrigger = "car2";
-        Serial.print("Lap: ");
-        Serial.println(car2Rounds);
         if(remainingLaps == 1 && car2Rounds > car1Rounds){
           remainingLaps = 0;
         };
@@ -268,9 +246,6 @@ void loop() {
         previousMillisC2 = nowTimeC2;
         lapTimesCar2[lapTimeCar2Index++] = lapTimeC2;
         timingCar1Allowed = false;
-        Serial.print("Laptime C2: ");
-        inputTime = lapTimeC2;
-        printTime();
       };
     };
     //Round doesn't count if a car stand still on Start
@@ -348,4 +323,132 @@ void loop() {
     };
     delay(0);
   };
-}
+
+//Show results
+  while(resultMode == true){
+    int buttonStateReset = digitalRead(startbtn);
+    
+    if(resultsShown == false){
+
+      //Fastest Laps and Sum Laptime
+      //Car 1
+      int totalTimeC1 = 0;
+      int minimumLTC1 = lapTimesCar1[0];
+      const int lapTimesCar1Size = sizeof(lapTimesCar1)/sizeof(lapTimesCar1[0]);
+      for (int i=0; i<lapTimesCar1Size; i++) {
+        if (lapTimesCar1[i] < minimum){
+          minimumLTC1 = lapTimesCar1[i];
+          totalTimeC1 += lapTimesCar1[i];
+        };
+      };
+      //Car 2
+      int minimumLTC2 = lapTimesCar2[0];
+      int totalTimeC1 = 0;
+      const int lapTimesCar2Size = sizeof(lapTimesCar2)/sizeof(lapTimesCar2[0]);
+      for (int i=0; i<lapTimesCar2Size; i++) {
+        if (lapTimesCar2[i] < minimum){
+          minimumLTC2 = lapTimesCar2[i];
+          totalTimeC2 += lapTimesCar2[i];
+        };
+      };
+      
+      //Who finished first with which timedelta and total Laps
+      if(car1Rounds > car2Rounds){
+        String winnerCar = "Car 1";
+        int roundDelta = car1Rounds - car2Rounds;
+        String timeDelta = "+" + roundDelta + " Laps";
+        int prntTotalLaps = car1Rounds;
+        int totalTime = totalTimeC1;
+      }else if(car1Rounds < car2Rounds){
+        String winnerCar = "Car 2";
+        int roundDelta = car2Rounds - car1Rounds;
+        String timeDelta = "+" + roundDelta + " Laps";
+        int totalTime = totalTimeC2;
+      }else{
+        if(totalTimeC1 > totalTimeC2){
+          String winnerCar = "Car 2";
+          int totalTimeDelta = totalTimeC1 - totalTimeC2
+          String timeDelta = "+" + printTime(totalTimeDelta);
+          int totalTime = totalTimeC2;
+        }else if(totalTimeC1 < totalTimeC2){
+          String winnerCar = "Car 1";
+          int totalTimeDelta = totalTimeC2 - totalTimeC1 
+          String timeDelta = "+" + printTime(totalTimeDelta);
+          int totalTime = totalTimeC1;
+        }else{
+          String winnerCar = "Equal";
+          String timeDelta = "+-00:00:00";
+          int totalTime = totalTimeC1;
+        }
+        int prntTotalLaps = car2Rounds;
+      };
+      
+      //Output Page 1
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0,0);
+      display.println(F("The Winner is"));
+      display.println(winnerCar);
+      display.setTextSize(2);
+      display.setCursor(0,30);
+      display.println(timeDelta);
+      display.display();
+
+      //Output Page 2
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0,0);
+      display.println(F("Total Laps:"));
+      display.println(prntTotalLaps);
+      display.setTextSize(2);
+      display.setCursor(0,30);
+      display.println(F("Total Time:"));
+      display.println(printTime());
+      display.display();
+
+      //Output Page 3
+      display.clearDisplay();
+      display.setTextSize(1);
+      display.setTextColor(SSD1306_WHITE);
+      display.setCursor(0,0);
+      display.println(F("Fastest Lap Car 1:"));
+      display.println(printTime(minimumLTC1));
+      display.setTextSize(2);
+      display.setCursor(0,30);
+      display.println(F("Fastest Lap Car 2:"));
+      display.println(printTime(minimumLTC2));
+      display.display();
+      
+      //Restart
+      Serial.print("Press Button to Reset: ");
+      resultsShown = true;
+    };
+    
+    //Reset to Beginning after Button is pushed another time
+    if(buttonStateReset == HIGH){
+      Serial.println("Reset"); 
+      runXTimes = true;
+      startseq = false;
+      systemReadyMsg = true;
+      lapSet = false;
+      raceMode = false;
+      finishMode = false;
+      resultsShown = false;
+      car1Rounds = -1;
+      car2Rounds = -1;
+      lapsNumOld = 0;
+      lapconfig = 0;
+      buttonStateSubmit = 0;
+      lapsNum = 0;
+      remainingLapsOld = 999;
+      remainingLaps = 999;
+      previousMillis = 0;
+      resultMode = false;
+      delay(1000);
+    };    
+  };
+  //Connect to an Live App
+  delay(0);
+};
