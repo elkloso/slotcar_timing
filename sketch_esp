@@ -86,6 +86,7 @@ unsigned long C2;
 unsigned long lapTime;
 unsigned long currentMillis;
 long previousMillis = 0;
+long previousMillis2 = 0;
 long previousMillisC1 = 0;
 long previousMillisC2 = 0;
 const long trackDistance = 200;
@@ -112,13 +113,15 @@ String printTime(unsigned long inputTime){
 };
 
 //Center Text on Display
-void drawCentreString(const char *buf, int x, int y)
+void drawCentreString(const String &buf, int x, int y)
 {
+    //String Height Size 2 = 16px
+    //Margin between Strings = 4px
     int16_t x1, y1;
     uint16_t w, h;
     display.getTextBounds(buf, x, y, &x1, &y1, &w, &h); //calc width of new string
-    display.setCursor(x - w / 2, y);
-    display.print(buf);
+    display.setCursor((SCREEN_WIDTH - w) / 2, y);
+    display.println(buf);
 }
 
 void loop() {
@@ -127,18 +130,15 @@ void loop() {
     display.clearDisplay();
     display.setTextSize(2);
     display.setTextColor(SSD1306_WHITE);
-    display.setCursor(20,10);
-    display.println(F("Slotcar"));
-    display.setCursor(20,30);
-    display.println(F("Timing"));
+    drawCentreString("Slotcar", 0, 14);
+    drawCentreString("Timing", 0, 34);
     display.display();
-    systemReadyMsg = false;
     delay(2000);
+    systemReadyMsg = false;
   };
  
   //Chose Distance via Poti (0-100 Rounds, 5 Steps)
   while(lapSet == false){
-    //Debounce Button
     unsigned long currentMillis = millis();
     buttonStateSubmit = digitalRead(startbtn);
     if (currentMillis - previousMillis >= interval) {
@@ -149,80 +149,74 @@ void loop() {
       if(lapsNumOld != lapsNum){
         display.clearDisplay();
         display.setTextSize(1);
-        display.setTextColor(SSD1306_WHITE);
-        display.setCursor(0,0);
-        display.println(F("Choose Laps and"));
-        display.println(F("Press Button"));
+        drawCentreString("Choose Laps and", 0, 9);
+        drawCentreString("Press Button", 0, 19);
         display.setTextSize(2);
-        display.setCursor(20,30);
-        display.print(F("Laps: "));
-        display.println(lapsNum);
+        drawCentreString(("Laps: " + String(lapsNum)), 0, 35);
         display.display();
         lapsNumOld = lapsNum;
       }; 
     };
     //Press Button to Start
-    if ((buttonStateSubmit == HIGH) && (lapSet == false)) {
-      lapconfig = lapsNumOld;
-      display.clearDisplay();
-      display.setTextSize(2);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(10,0);
-      display.print(F("Laps = "));
-      display.println(lapconfig);
-      display.setTextSize(1);
-      display.setCursor(0,40);
-      display.print(F("Press Button to Start"));
-      display.display();
-      lapSet = true;
-      delay(1500);
+    unsigned long currentMillis2 = millis();
+    if (currentMillis2 - previousMillis2 >= interval) {
+      previousMillis2 = currentMillis2;
+      if ((buttonStateSubmit == HIGH) && (lapSet == false)) {
+          lapconfig = lapsNumOld;
+          display.clearDisplay();
+          display.setTextSize(2);
+          drawCentreString(("Laps = " + String(lapconfig)), 0, 20);
+          display.setTextSize(1);
+          drawCentreString("Press Button to Start", 0, 44);
+          display.display();
+          lapSet = true;
+      };
     };
-    delay(0);
+  delay(0);
   };
 
   unsigned long lapTimesCar1[lapsNumOld];
   int lapTimeCar1Index = 0;
   unsigned long lapTimesCar2[lapsNumOld];
   int lapTimeCar2Index = 0;
+  unsigned long currentMillis2 = millis();
   
   //Start Signal Sequence
   //Start Button Pushed and Startsequence not completed
   int buttonStateStart = digitalRead(startbtn);
-  if ((buttonStateStart == HIGH) && (startseq == false) && (lapSet == true)) {
-    while(startseq == false){
-      //Start Signal
-      digitalWrite(15, HIGH);
-      display.clearDisplay();
-      display.setTextSize(2);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(5,25);
-      display.print(F("Get Ready!"));
-      display.display();
-      delay(4000); // Wait for 4s
-      for (int i=0; i<ledArraySize; i++) {
-          digitalWrite(ledArray[i], HIGH);
-          display.clearDisplay();
-          display.setTextSize(3);
-          display.setTextColor(SSD1306_WHITE);
-          display.setCursor(55,25);
-          display.print(countdown[i]);
-          display.display();
-          delay(1000); // Wait for 1s
+  currentMillis2 = millis();
+  if (currentMillis2 - previousMillis2 >= interval) {
+    previousMillis2 = currentMillis;
+    if ((buttonStateStart == HIGH) && (startseq == false) && (lapSet == true)) {
+      while(startseq == false){
+        //Start Signal
+        digitalWrite(15, HIGH);
+        display.clearDisplay();
+        display.setTextSize(2);
+        drawCentreString("Get Ready!", 0, 24);
+        display.display();
+        delay(4000); // Wait for 4s
+        for (int i=0; i<ledArraySize; i++) {
+            digitalWrite(ledArray[i], HIGH);
+            display.clearDisplay();
+            display.setTextSize(3);
+            drawCentreString(String(countdown[i]), 0, 20);
+            display.display();
+            delay(1000); // Wait for 1s
+        };
+        for (int i=0; i<ledArraySize; i++) {
+            digitalWrite(ledArray[i], LOW);
+        };
+        display.clearDisplay();
+        display.setTextSize(2);
+        drawCentreString("START!", 0, 24);
+        display.display();
+        startTime = millis();
+        lastTime = startTime;
+        startseq = true;
+        raceMode = true;
+        buttonStateStart = 0;
       };
-      for (int i=0; i<ledArraySize; i++) {
-          digitalWrite(ledArray[i], LOW);
-      };
-      display.clearDisplay();
-      display.setTextSize(2);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(35,25);
-      display.print(F("START!"));
-      display.display();
-      startTime = millis();
-      lastTime = startTime;
-      startseq = true;
-      raceMode = true;
-      buttonStateStart = 0;
     };
   };
 
