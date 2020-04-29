@@ -1,5 +1,4 @@
 //To-DO
-//Text zentrieren
 //Aufräumen
 
 //Include Libraries
@@ -42,8 +41,16 @@ void setup() {
   if(!display.begin(SSD1306_SWITCHCAPVCC, 0x3C)) { // Address 0x3D for 128x64
     Serial.println(F("SSD1306 allocation failed"));
     for(;;); // Don't proceed, loop forever
-  }            
-  display.display();  
+  }     
+
+  //Bootscreen
+  display.clearDisplay();
+  display.setTextSize(2);
+  display.setTextColor(SSD1306_WHITE);
+  drawCentreString("Slotcar", 0, 14);
+  drawCentreString("Timing", 0, 34);
+  display.display();
+  delay(2000);
 }
 
 //#########   Setup   #########//
@@ -125,20 +132,9 @@ void drawCentreString(const String &buf, int x, int y)
 }
 
 void loop() {
-  //Auslagern in Setup
-  while(systemReadyMsg == true){
-    display.clearDisplay();
-    display.setTextSize(2);
-    display.setTextColor(SSD1306_WHITE);
-    drawCentreString("Slotcar", 0, 14);
-    drawCentreString("Timing", 0, 34);
-    display.display();
-    delay(2000);
-    systemReadyMsg = false;
-  };
- 
-  //Chose Distance via Poti (0-100 Rounds, 5 Steps)
   while(lapSet == false){
+    
+    //Chose Distance via Poti (0-100 Rounds, 5 Steps)
     unsigned long currentMillis = millis();
     buttonStateSubmit = digitalRead(startbtn);
     if (currentMillis - previousMillis >= interval) {
@@ -157,11 +153,12 @@ void loop() {
         lapsNumOld = lapsNum;
       }; 
     };
+    
     //Press Button to Start
     unsigned long currentMillis2 = millis();
     if (currentMillis2 - previousMillis2 >= interval) {
-      previousMillis2 = currentMillis2;
-      if ((buttonStateSubmit == HIGH) && (lapSet == false)) {
+      if (buttonStateSubmit == HIGH) {
+          previousMillis2 = currentMillis2;
           lapconfig = lapsNumOld;
           display.clearDisplay();
           display.setTextSize(2);
@@ -172,6 +169,7 @@ void loop() {
           lapSet = true;
       };
     };
+    
   delay(0);
   };
 
