@@ -267,7 +267,6 @@ void loop() {
           lapTimesCar2[lapTimeCar2Index++] = lapTimeC2;
         }; 
         timingCar2Allowed = false;
-        Serial.println(lastTimeC2);
       };
     };
     //Round doesn't count if a car stand still on Start
@@ -287,28 +286,21 @@ void loop() {
     };
     //Calculate Leading Car 
     if(car1Rounds > car2Rounds){
-      leader = "Car 1";
+      leader = "C1";
     }else if(car1Rounds < car2Rounds){
-      leader = "Car 2";
+      leader = "C2";
     }else{
       if(lastTrigger == "car2"){
-        leader = "Car 1";
+        leader = "C1";
       }else{
-        leader = "Car 2";
+        leader = "C2";
       }
     };
-    if(remainingLaps < remainingLapsOld){
+    if((remainingLaps < remainingLapsOld) && (remainingLaps > 1)){
         display.clearDisplay();
-        display.setTextSize(1);
-        display.setTextColor(SSD1306_WHITE);
-        display.setCursor(0,0);
-        display.println(F("Laps to Go: "));
         display.setTextSize(2);
-        display.println(remainingLaps);
-        display.setCursor(0,30);
-        display.println(F("Leader:"));
-        display.setTextSize(2);
-        display.println(leader);
+        drawCentreString(("Laps: +" + String(remainingLaps)) , 0, 11);
+        drawCentreString(("Lead: " + String(leader)) , 0, 37);
         display.display();
         remainingLapsOld = remainingLaps;
     };
@@ -319,28 +311,28 @@ void loop() {
       //Set LEDs to Orange
       digitalWrite(ledOrange, HIGH);
       display.clearDisplay();
-      display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(0,0);
-      display.println(F("LAST LAP!"));
       display.setTextSize(2);
-      display.setCursor(0,30);
-      display.println(F("Leader:"));
-      display.setTextSize(2);
-      display.println(leader);
+      drawCentreString("LAST LAP!" , 0, 11);
+      drawCentreString(("Lead: " + String(leader)) , 0, 37);
       display.display();
       //Set Remaining Laps to 1
       remainingLaps = 1;
     };
+    
     //Last Lap is Completed
     if(remainingLaps == 0){
       //Set LEDs to RED/STOP after last lap
       for (int i=0; i<ledArraySize; i++) {
           digitalWrite(ledArray[i], HIGH);
+          display.clearDisplay();
+          display.setTextSize(1);
+          drawCentreString("Waiting For" , 0, 22);
+          drawCentreString("Last Car" , 0, 34);
+          display.display();
       };
 
       //Wait for Second Car to Complete Last Lap
-      if(leader = "Car 1"){
+      if(leader = "C1"){
         timingCar1Allowed == false;
         if(car2Rounds > car2RoundsBefore){
           raceMode = false;
@@ -348,7 +340,7 @@ void loop() {
           buttonStateStop = 0;
         };
       };
-      if(leader = "Car 2"){
+      if(leader = "C2"){
         timingCar2Allowed == false;
         if(car1Rounds > car1RoundsBefore){
           raceMode = false;
@@ -436,13 +428,13 @@ void loop() {
       //Output Page 1
       display.clearDisplay();
       display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(0,0);
-      display.println(F("The Winner is"));
-      display.println(winnerCar);
+      drawCentreString("The Winner is" , 0, 0);
+      display.setTextSize(2);
+      drawCentreString(String(winnerCar) , 0, 12);
       display.setTextSize(1);
-      display.setCursor(0,30);
-      display.println(timeDelta);
+      drawCentreString("Time Delta:" , 0, 36);
+      display.setTextSize(2);
+      drawCentreString(String(timeDelta) , 0, 48);
       display.display();
       //Next Page
       currentMillis = millis();
@@ -458,14 +450,13 @@ void loop() {
       //Output Page 2
       display.clearDisplay();
       display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(0,0);
-      display.println(F("Total Laps:"));
-      display.println(prntTotalLaps);
+      drawCentreString("Total Laps:" , 0, 0);
+      display.setTextSize(2);
+      drawCentreString(String(prntTotalLaps) , 0, 12);
       display.setTextSize(1);
-      display.setCursor(0,30);
-      display.println(F("Total Time:"));
-      display.println(printTime(totalTime));
+      drawCentreString("Total Time:" , 0, 36);
+      display.setTextSize(2);
+      drawCentreString(String(printTime(totalTime)) , 0, 48);
       display.display();
       //Next Page
       currentMillis = millis();
@@ -481,14 +472,13 @@ void loop() {
       //Output Page 3
       display.clearDisplay();
       display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(0,0);
-      display.println(F("Fastest Lap Car 1:"));
-      display.println(printTime(minimumLTC1));
+      drawCentreString("Fastest Lap Car 1:" , 0, 0);
+      display.setTextSize(2);
+      drawCentreString(String(printTime(minimumLTC1)) , 0, 12);
       display.setTextSize(1);
-      display.setCursor(0,30);
-      display.println(F("Fastest Lap Car 2:"));
-      display.println(printTime(minimumLTC2));
+      drawCentreString("Fastest Lap Car 2:" , 0, 36);
+      display.setTextSize(2);
+      drawCentreString(String(printTime(minimumLTC2)) , 0, 48);
       display.display();
        //Next Page
       currentMillis = millis();
@@ -504,9 +494,8 @@ void loop() {
       //Reset Mode
       display.clearDisplay();
       display.setTextSize(1);
-      display.setTextColor(SSD1306_WHITE);
-      display.setCursor(0,0);
-      display.println(F("Press Button to Reset"));
+      drawCentreString("Press Button", 0, 23);
+      drawCentreString("to Reset", 0, 33);
       display.display();
        //Next Page
       currentMillis = millis();
@@ -548,9 +537,9 @@ void loop() {
           previousMillis = 0;
           previousMillisC1 = 0;
           previousMillisC2 = 0;
+          previousMillis2 = 0;
           timingCar1Allowed = true;
           timingCar2Allowed = true;
-          previousMillis = currentMillis;
           resultMode = false;
         };
       };
